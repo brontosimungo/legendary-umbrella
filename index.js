@@ -219,8 +219,13 @@ async function logInGmail(page, data) {
             await waitForPasswordType(page, data['pass'])
             await delay(500)
             await page.click('#passwordNext')
-            //await delay(500)
-            //await page.click('#confirm')
+            try {
+                await page.waitForSelector('#confirm', { timeout: 2000 });
+                await page.click('#confirm');
+            } catch (err) {
+            // Jika tidak ada tombol #confirm, lanjut saja tanpa error
+                console.log('Tombol #confirm tidak ditemukan, lanjutkan...');
+            }
             let status = await waitForLoginSuccess(page, false)
 
             if (status == 4) {
