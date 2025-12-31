@@ -198,16 +198,16 @@ start_mining()
 		THREAD="-t ${1}"
 	fi
 
-	if [ ! -f "coreminer" ]; then
+	if [ ! -f "agate" ]; then
 		echo "$(tput setaf 1)●$(tput sgr 0) Miner executable not found!"
 		exit 2
 	fi
 
-	if [[ -x "coreminer" ]]; then
-		./coreminer --noeval $LARGE_PAGES $HARD_AES $SECURE_JIT $POOLS $THREAD
+	if [[ -x "agate" ]]; then
+		./agate --noeval $LARGE_PAGES $HARD_AES $SECURE_JIT $POOLS $THREAD
 	else
-		chmod +x coreminer
-		./coreminer --noeval $LARGE_PAGES $HARD_AES $SECURE_JIT $POOLS $THREAD
+		chmod +x agate
+		./agate --noeval $LARGE_PAGES $HARD_AES $SECURE_JIT $POOLS $THREAD
 	fi
 }
 
@@ -276,23 +276,23 @@ update_app()
 	if [ -f "./mine.updated.sh" ]; then
 		mv -f mine.updated.sh mine.sh
 	fi
-	JSONDATA=$(curl -X GET --header "Accept: application/json" "https://api.github.com/repos/catchthatrabbit/coreminer/releases/latest")
+	JSONDATA=$(curl -X GET --header "Accept: application/json" "https://api.github.com/repos/catchthatrabbit/agate/releases/latest")
 	TAG=$(echo "${JSONDATA}" | awk 'BEGIN{RS=","} /tag_name/{gsub(/.*: "/,"",$0); gsub(/"/,"",$0); print $0}')
 	LATESTVER=$(echo ${TAG} | sed -r 's/^v//')
 	ARCH=$(uname -m)
 	if [ "$ARCH" == "aarch64" ]; then ARCH="arm64"; fi
 	PLATFORM=$(uname | tr '[:upper:]' '[:lower:]')
-	LATESTDOWN="https://github.com/catchthatrabbit/coreminer/releases/download/${TAG}/coreminer-${PLATFORM}-${ARCH}.tar.gz"
-	if [ -f "./coreminer" ]; then
-		VER=$(./coreminer -V | sed -n '2p' | sed 's/+commit\.\?[a-f0-9]*//')
+	LATESTDOWN="https://github.com/catchthatrabbit/agate/releases/download/${TAG}/agate-${PLATFORM}-${ARCH}.tar.gz"
+	if [ -f "./agate" ]; then
+		VER=$(./agate -V | sed -n '2p' | sed 's/+commit\.\?[a-f0-9]*//')
 		printf -v versions '%s\n%s' "$VER" "$LATESTVER"
 		if [[ $versions = "$(sort -V <<< "$versions")" ]]; then
 			if curl --output /dev/null --silent --head --fail "$LATESTDOWN"; then
 				echo "$(tput setaf 2)●$(tput sgr 0) Downloading the update."
 				curl -OL "$LATESTDOWN"
-				tar -xzvf ./"coreminer-${PLATFORM}-${ARCH}.tar.gz"
-				rm -f ./"coreminer-${PLATFORM}-${ARCH}.tar.gz"
-				cd coreapp && mv -f coreminer ../coreminer && mv -f mine.sh ../mine.updated.sh
+				tar -xzvf ./"agate-${PLATFORM}-${ARCH}.tar.gz"
+				rm -f ./"agate-${PLATFORM}-${ARCH}.tar.gz"
+				cd coreapp && mv -f agate ../agate && mv -f mine.sh ../mine.updated.sh
 				cd .. && rm -rf coreapp
 				echo "$(tput setaf 2)●$(tput sgr 0) Restarting the program."
 				exec ./mine.sh
@@ -305,19 +305,19 @@ update_app()
 	else
 		echo "$(tput setaf 2)●$(tput sgr 0) Software is not installed in this folder. Downloading the latest version."
 		curl -OL "$LATESTDOWN"
-		FILENAME="coreminer-${PLATFORM}-${ARCH}.tar.gz"
+		FILENAME="agate-${PLATFORM}-${ARCH}.tar.gz"
 		GZIP_MAGIC_NUMBER=$(head -c 2 "${FILENAME}" | od -N 2 -t x1 | awk 'NR==1 { printf("%s%s\n", $2, $3) }')
 		if [ "${GZIP_MAGIC_NUMBER}" == "1f8b" ]; then
-			tar -xzvf ./"coreminer-${PLATFORM}-${ARCH}.tar.gz"
-			rm -f ./"coreminer-${PLATFORM}-${ARCH}.tar.gz"
-			cd coreapp && mv -f coreminer ../coreminer && mv -f mine.sh ../mine.updated.sh
+			tar -xzvf ./"agate-${PLATFORM}-${ARCH}.tar.gz"
+			rm -f ./"agate-${PLATFORM}-${ARCH}.tar.gz"
+			cd coreapp && mv -f agate ../agate && mv -f mine.sh ../mine.updated.sh
 			cd .. && rm -rf coreapp
 			echo "$(tput setaf 2)●$(tput sgr 0) Restarting the program."
 			exec ./mine.updated.sh
 		else
 			echo "$(tput setaf 1)●$(tput sgr 0) Downloaded file is not in gzip format. Update failed."
 			echo "$(tput setaf 1)●$(tput sgr 0) Please, download the latest version manually."
-			rm -f ./"coreminer-${PLATFORM}-${ARCH}.tar.gz"
+			rm -f ./"agate-${PLATFORM}-${ARCH}.tar.gz"
 			exit 3
 		fi
 	fi
@@ -325,34 +325,34 @@ update_app()
 
 autostart_service()
 {
-	if [ -f "/etc/systemd/system/coreminer.service" ]; then
+	if [ -f "/etc/systemd/system/agate.service" ]; then
 		echo "$(tput setaf 2)●$(tput sgr 0) Autostart service already exists."
 		return
 	fi
 	echo "$(tput setaf 2)●$(tput sgr 0) Creating autostart service."
-	> /etc/systemd/system/coreminer.service
-	echo "[Unit]" >> /etc/systemd/system/coreminer.service
-	echo "Description=CoreMiner Service" >> /etc/systemd/system/coreminer.service
-	echo "After=network.target" >> /etc/systemd/system/coreminer.service
-	echo "StartLimitIntervalSec=0" >> /etc/systemd/system/coreminer.service
-	echo "" >> /etc/systemd/system/coreminer.service
-	echo "[Service]" >> /etc/systemd/system/coreminer.service
-	echo "Type=simple" >> /etc/systemd/system/coreminer.service
-	echo "WorkingDirectory=$(pwd)" >> /etc/systemd/system/coreminer.service
-	echo "ExecStart=/bin/bash $(pwd)/mine.sh" >> /etc/systemd/system/coreminer.service
-	echo "Restart=always" >> /etc/systemd/system/coreminer.service
-	echo "RestartSec=3" >> /etc/systemd/system/coreminer.service
-	echo "TimeoutStartSec=0" >> /etc/systemd/system/coreminer.service
-	echo "" >> /etc/systemd/system/coreminer.service
-	echo "[Install]" >> /etc/systemd/system/coreminer.service
-	echo "WantedBy=multi-user.target" >> /etc/systemd/system/coreminer.service
+	> /etc/systemd/system/agate.service
+	echo "[Unit]" >> /etc/systemd/system/agate.service
+	echo "Description=agate Service" >> /etc/systemd/system/agate.service
+	echo "After=network.target" >> /etc/systemd/system/agate.service
+	echo "StartLimitIntervalSec=0" >> /etc/systemd/system/agate.service
+	echo "" >> /etc/systemd/system/agate.service
+	echo "[Service]" >> /etc/systemd/system/agate.service
+	echo "Type=simple" >> /etc/systemd/system/agate.service
+	echo "WorkingDirectory=$(pwd)" >> /etc/systemd/system/agate.service
+	echo "ExecStart=/bin/bash $(pwd)/mine.sh" >> /etc/systemd/system/agate.service
+	echo "Restart=always" >> /etc/systemd/system/agate.service
+	echo "RestartSec=3" >> /etc/systemd/system/agate.service
+	echo "TimeoutStartSec=0" >> /etc/systemd/system/agate.service
+	echo "" >> /etc/systemd/system/agate.service
+	echo "[Install]" >> /etc/systemd/system/agate.service
+	echo "WantedBy=multi-user.target" >> /etc/systemd/system/agate.service
 	systemctl daemon-reload
-	systemctl enable coreminer.service
+	systemctl enable agate.service
 	echo "$(tput setaf 2)●$(tput sgr 0) Autostart service created."
 	echo "$(tput setaf 2)●$(tput sgr 0) Configuring journal rotation."
 	journalctl --rotate && journalctl --vacuum-time=1d
 	echo "$(tput setaf 2)●$(tput sgr 0) Starting autostart service."
-	systemctl start coreminer.service
+	systemctl start agate.service
 }
 
 extdrive_check()
